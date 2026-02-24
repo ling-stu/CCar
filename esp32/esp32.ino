@@ -4,12 +4,13 @@
 #include "web.h"
 #include "omni.h"
 
-const char* WIFI_SSID = "CAR_1";
-const char* WIFI_PASS = "123456";
+const char* WIFI_SSID = "largan_DIT_1";
+const char* WIFI_PASS = "largan_DIT";
 
 WebServer server(80);
 WebSocketsServer ws(81);
 IPAddress IP;
+
 
 #define LED_PIN 2
 #define PWM1_PIN 14
