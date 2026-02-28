@@ -1,3 +1,7 @@
+// ====== 控制頁 HTML ======
+// 功能：提供車體與鏡頭控制介面，以及 WebSocket 操作
+// 可能問題：影像不顯示 → 檢查串流 URL/相機 IP 是否正確
+// 可能問題：按鈕無反應 → 檢查 WebSocket 連線與訊息字串是否對應
 const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="zh-TW">
@@ -72,7 +76,7 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <body>
 	<main>
 		<h2>DIT_CamCar</h2>
-    <!-- Stream Toggle -->
+    <!-- 功能：串流開關；問題：IP 不對會黑屏 -->
 		<label class="switch">
       <input type="checkbox" id="toggle">
       <span class="slider"></span>
@@ -84,8 +88,9 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
      <button id="BTN_R" class="tcp">R</button><br>
      <button id="BTN_B" class="tcp">B</button><br>
      <button id="BTN_counterclockwise" class="tcp">左旋</button>
-     <button id="BTN_clockwise" class="tcp">右旋</button><br>
-
+     <button id="BTN_clockwise" class="tcp">右旋</button>
+     <button id="CAM_L" class="tcp">鏡頭左旋</button>
+     <button id="CAM_R" class="tcp">鏡頭右旋</button><br>
     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgyIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgb3ZlcmZsb3c9ImhpZGRlbiI+PGRlZnM+PGNsaXBQYXRoIGlkPSJjbGlwMCI+PHJlY3QgeD0iMjMxIiB5PSIxOTgiIHdpZHRoPSIyODIiIGhlaWdo
       dD0iMjQwIi8+PC9jbGlwUGF0aD48Y2xpcFBhdGggaWQ9ImNsaXAxIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjY4NjA1MCIgaGVpZ2h0PSIyMjg2MDAwIi8+PC9jbGlwUGF0aD48aW1hZ2Ugd2lkdGg9IjQ1MiIgaGVpZ2h0PSIzODUiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBY1FBQUFHQkNBWUFBQUQ0eXNIQUFBQUFBWE5TUjBJQXJzNGM2UUFBQUFSblFVMUJBQUN4and2OFlRVUFBQUFKY0VoWmN3QUFEc01BQUE3REFjZHZxR1FBQUZmeVNVUkJWSGhlN1owSHRDUmx0YmIzL2tKVjl6bG41a3dncUFRQlFSUXdvcUlnR0VBSkNwSkVERmU4aXBnQXd4VzlvRjRNR0FtS2dPS29CRVVGTTRpS2lQNkNFaFVFa1l5U0ZTUWphWVl3LzNwN3ZocDd2bE1kVDRlcTd2ZFpheStYVEhlZkRsWDExczRpaEJCQ0NDR0VFRUlJSVlRUVFnZ2hoQkJDQ0NHRUVFSUlJWVFRUWdnaGhCQkNDQ0dFRUVJSUlZUVFRZ2doaEJCQ0NDR0VFRUlJSVlRUVFnZ2hoQkJDQ0NHRUVFSUlJWVFRUWdnaGhCQkNDQ0dFRUVJSUlZUVFRZ2doaEJCQ0NDR0VFRUlJSVlRUVFnZ2hoQkJDQ0NHRUVFSUlJWVFRUWdnaGhCQkNDQ0dFRUVJSUlZUVFRZ2doaEJCQ0NDR0VFRUlJSVlRUVFnZ2hoQkJDQ0NHRUVFSUlJWVFRUWtpUG1DY2lhNHZJdWlLeW5ZaDhVRVFPcUxQL0ZaRTNpc2pUUk9RcHdWWVZFWTFmaUJCQ0NDa2o4MFhrbVNMeUdSRTVXMFQrSkNKL0U1Ri9pOGdEa2YxRFJDNFNrVCtLeUFVaThpMFIyVXBFMWhLUnFmaUZDU0dFa0RMZ1JlVGxJbklVQkU1Vjd4V1JwUjNhRWhHNVVrVE9GSkV2aXNqcmdzQVNRZ2docFFDaXRhdUkvRjVFSHNvUnVtN3M0ZUJaZmptRVZsZG5PSlVRUWtpUmdWQWRGRHk3eDNLRWJiWUdZYnhGUkw0aklpOFZrY240RFJCQ0NDSERCbUw0ZVZXOU0wZkllbTBJcHlJZnVXOG8yQ0dFRUVJS1FVME1SV1FRWWxodjE0bkkreWlLaEJCQ2lzQ3d4REF6aU9MN0tZcUVFRUtHeVZ3UitlU0F3cVROREtLNFY2aHVKWVFRUWdZS3hHY25FZm1yaUR5ZUkxS0ROQlR3L0ZaRU5oVVJFNzlSUWdnaHBGOUFERjh0SW4vb1V6VnBON1pZUkw0ZnB0
       MFFRZ2pwRWx6Z2tRdGJKNHdZV3psK0FGbU9FNUZYRlV3TU03dERSUFlYa2VuNFRSTkNDR2xOSWlJN2k4alB3OGl3ODBUa2FCSFpJSDVnR3lTVGs1T2pQb01UTnd2d3hCN05FYVFpMk1VaXNsbjhwZ2toWkZ4NGJpaXFXRC8raHhaQURERlZCZk16bCtmQlZCV3pOai9kU2VQMy9QbnoxNXllbm43L2dnVUxqbDZ3WU1IVDQzOGZFZUJKNCtiaGlod2hLb1I1NzFIZ2cxWU1GdGdRUXNhT0JjR2orNWVJSEM4aUwrb2c1TGwxOEFwbkZJV282b1VpOHVMNENUbmd3cnRobXFhSEowbHkrNElGQzI2WU8zZnU4K0lIalFCRnpCdm0yU05oa2syN3h3QWhoSXdNVHc2YkZIQXh4T3pNUzhLbUJIZ3lFL0dENjBDKzhMZ3dEaXkrcUVJUUgxYlZFMXFFVHROUWFYbDYyT0N3ZEhwNitzcTVjK2UrSUg3Z0NQQVNFVG1yNEdLWTJRMGk4blo2aVlTUWNRUGhVdVNONmkrSThCTFFEdkRXQm1GUEZNNWdVSFRUTFF3aGRJclZSWG5yaDlZVWtRK0lDRHpKNVI2bWMrNVc3LzEvajFnZWNRMFIrWXFJUEJoL1J3VTFqSGI3dW9oVTR3OUNDQ0dqQ2pZckhDb2k5K2RjRkdFWU1uMmdpTUJqV3lrOEJ5SFdnMXVKNFhKVHVVcEVkb3NFRGp2NnZpUWl0ODk0L0RLUDh3c2oxQTgzN0VrMEhadHo3akZWUGFPRmQwOElJU05GZmJpMGtVSDRFRVpGbm5Fell3eTh0MnR5SHBkcnFvcitObmhIbU1xeVVFU2VIYnpMZStMSEJzUGpJWlkyZnJNbDVFbGxFOFBNakRGWUY0V2RqSVFRTWhZZ0QzaCtmREZzWUE5VktwVy9ldSt2enl1aWFXSFhpc2hoSXZLTnNHV2hsaS9NTTFWRk84SXZnbkNXUFd5NnU0amNGSC9Ha2hqR3VXMFZmeUJDQ0JsVnRoZVJ2K2RjRFB0aEtOaEJiaXIrN3pOTWpYbElWYjh0SXM4b3VTaStVMFR1amo5ZlNZeUNTQWdwTlFqUm9lQUZSUnp0RkVTZ3FLV2h0elpNODk1bm92ak1Oa1FSMVpDclZhdlZvbTJDcHlBU1FzZ1FnQmdlRzBLZ3Z4YVJ6NG5JaDBYa1hRMGE3dEh5Z09iNUlsYyt3cXY4U1Zoa2l3S1BlckhEVUlBdGc2aC9TdFg5eXRvRW4zL2R1c2NNRzdRdTNCWUtoZG8xVlBqRzM4TXdqSUpJQ0NrdDhBenI4NEVRRTFTUG9xRGpoeUx5djZHM01HdTRmbVZvZVlndmhFVXo1QlR2Q3NMNEVSSDVVTENEd2xDQSt5
@@ -120,11 +125,13 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
 		
     <script>
       /* ---------- WebSocket ---------- */
+      /* 功能：與 ESP32(81) 互傳控制指令；問題：連不上 → 檢查埠號/防火牆 */
       const ws = new WebSocket(`ws://${location.hostname}:81/`);
       ws.onopen = ()=>console.log("WS connected");
 
       /* ---------- DOM ---------- */
       const togChk = document.getElementById('toggle');
+      const togLed = document.getElementById('LED');
       const stream = document.getElementById('stream');
       const btn_f  = document.getElementById('BTN_F');
       const btn_b  = document.getElementById('BTN_B');
@@ -132,8 +139,11 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
       const btn_l  = document.getElementById('BTN_L');
       const btn_c  = document.getElementById('BTN_clockwise');
       const btn_cc  = document.getElementById('BTN_counterclockwise');
+      const btn_Cr  = document.getElementById('CAM_R');
+      const btn_Cl  = document.getElementById('CAM_L');
 
       /* TCP 控制功能 send() */
+      /* 問題：按鈕無反應 → 確認 ws.readyState===1 */
       function send(msg){
       if(ws && ws.readyState===1){ ws.send(msg); }
       }
@@ -148,14 +158,16 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
         }
       });
 
-
       /* ---------- BTN control ---------- */
+      /* 功能：按住連續送指令；問題：延遲大可增加送包間隔 */
       let btnfInterval = null;
       let btnbInterval = null;
       let btnrInterval = null;
       let btnlInterval = null;
       let btncInterval = null;
       let btnccInterval = null;
+      let CamRInterval = null;
+      let CamLInterval = null;
 
       btn_f.addEventListener('pointerdown', () => {
         send('BTNF'); // 馬上發送一次
@@ -199,6 +211,19 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
         }, 100); // 每 100ms 傳送一次
       });
 
+      btn_Cr.addEventListener('pointerdown', () => {
+        send('BTNCamR'); // 馬上發送一次
+        CamRInterval = setInterval(() => {
+          send('BTNCamR');
+        }, 100); // 每 100ms 傳送一次
+      });
+
+      btn_Cl.addEventListener('pointerdown', () => {
+        send('BTNCamL'); // 馬上發送一次
+        CamLInterval = setInterval(() => {
+          send('BTNCamL');
+        }, 100); // 每 100ms 傳送一次
+      });
 
       btn_f.addEventListener('pointerup', () => {
         clearInterval(btnfInterval);
@@ -223,35 +248,53 @@ const char PAGE_HTML[] PROGMEM = R"rawliteral(
         clearInterval(btnccInterval);
       });
 
+      btn_Cl.addEventListener('pointerup', () => {
+        clearInterval(CamLInterval);
+      });
+
+      btn_Cr.addEventListener('pointerup', () => {
+        clearInterval(CamRInterval);
+      });
+
       btn_f.addEventListener('pointerleave', () => {
         send('S');
-        clearInterval(btnfInterval); // 手指離開按鈕時也停止
+        clearInterval(btnfInterval); // 手指離開按鈕範圍也停止
       });
 
       btn_b.addEventListener('pointerleave', () => {
         send('S');
-        clearInterval(btnbInterval); // 手指離開按鈕時也停止
+        clearInterval(btnbInterval); // 手指離開按鈕範圍也停止
       });
 
       btn_r.addEventListener('pointerleave', () => {
         send('S');
-        clearInterval(btnrInterval); // 手指離開按鈕時也停止
+        clearInterval(btnrInterval); // 手指離開按鈕範圍也停止
       });
 
       btn_l.addEventListener('pointerleave', () => {
         send('S');
-        clearInterval(btnlInterval); // 手指離開按鈕時也停止
+        clearInterval(btnlInterval); // 手指離開按鈕範圍也停止
       });
 
       btn_c.addEventListener('pointerleave', () => {
         send('S');
-        clearInterval(btncInterval); // 手指離開按鈕時也停止
-      });
-      btn_cc.addEventListener('pointerleave', () => {
-        send('S');
-        clearInterval(btnccInterval); // 手指離開按鈕時也停止
+        clearInterval(btncInterval); // 手指離開按鈕範圍也停止
       });
 
+      btn_cc.addEventListener('pointerleave', () => {
+        send('S');
+        clearInterval(btnccInterval); // 手指離開按鈕範圍也停止
+      });
+
+      btn_Cl.addEventListener('pointerleave', () => {
+        send('SCam');
+        clearInterval(CamLInterval); // 手指離開按鈕範圍也停止
+      });
+
+      btn_Cr.addEventListener('pointerleave', () => {
+        send('SCam');
+        clearInterval(CamRInterval); // 手指離開按鈕範圍也停止
+      });
 
       /* ---------- prohibit scalable ---------- */
       let lastTouchEnd = 0;
